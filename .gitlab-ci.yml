@@ -1,0 +1,110 @@
+image: docker:19.03.12
+
+before_script:
+  - apk --no-cache add python2 nodejs npm git curl build-base
+
+stages:
+  - build
+  - deploy
+
+build:dev:
+  stage: build
+  script:
+    - echo "Start build..."
+    # Build the container image
+    - cp $DEV_ENV_FILE ./.env
+    - docker build -t registry.polygram-solutions.com/scholar-api-dev .
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_SERVER
+    # Push the container image to the registry
+    - docker push registry.polygram-solutions.com/scholar-api-dev
+    # Cleanup by removing the local image
+    - docker image rm registry.polygram-solutions.com/scholar-api-dev
+
+  only:
+    - dev
+
+deploy:dev:
+  stage: deploy
+  script:
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    - kubectl --kubeconfig=$K8S_TOKEN_DEV get nodes
+    # create/update the kubernetes resources
+    - kubectl --kubeconfig=$K8S_TOKEN_DEV apply -f k8s-manifest-dev.yml
+    # Restart the deployment so as to pull the latest version of the container image
+    - kubectl --kubeconfig=$K8S_TOKEN_DEV rollout restart deployment/scholar-api-dev
+  environment:
+    name: development
+  only:
+    - dev
+  dependencies:
+    - build:dev
+
+build:staging:
+  stage: build
+  script:
+    - echo "Start build..."
+    # Build the container image
+    - cp $STG_ENV_FILE ./.env
+    - docker build -t registry.polygram-solutions.com/scholar-api-stg .
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_SERVER
+    # Push the container image to the registry
+    - docker push registry.polygram-solutions.com/scholar-api-stg
+    # Cleanup by removing the local image
+    - docker image rm registry.polygram-solutions.com/scholar-api-stg
+
+  only:
+    - staging
+
+deploy:staging:
+  stage: deploy
+  script:
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET get nodes
+    # create/update the kubernetes resources
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET apply -f k8s-manifest-stg.yml
+    # Restart the deployment so as to pull the latest version of the container image
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET rollout restart deployment/scholar-api-stg
+  environment:
+    name: production
+  only:
+    - staging
+  dependencies:
+    - build:staging
+
+build:main:
+  stage: build
+  script:
+    - echo "Start build..."
+    # Build the container image
+    - cp $PROD_ENV_FILE ./.env
+    - docker build -t registry.polygram-solutions.com/scholar-api .
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_SERVER
+    # Push the container image to the registry
+    - docker push registry.polygram-solutions.com/scholar-api
+    # Cleanup by removing the local image
+    - docker image rm registry.polygram-solutions.com/scholar-api
+
+  only:
+    - main
+
+deploy:main:
+  stage: deploy
+  script:
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET get nodes
+    # create/update the kubernetes resources
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET apply -f k8s-manifest.yml
+    # Restart the deployment so as to pull the latest version of the container image
+    - kubectl --kubeconfig=$K8S_TOKEN_TVET rollout restart deployment/scholar-api
+  environment:
+    name: production
+  only:
+    - main
+  dependencies:
+    - build:main

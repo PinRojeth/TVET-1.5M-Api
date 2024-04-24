@@ -1,0 +1,38 @@
+# This section will create a deployment in the Kubernetes cluster
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scholar-api-dev
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: scholar-api-dev
+  template:
+    metadata:
+      labels:
+        app: scholar-api-dev
+    spec:
+      containers:
+      - name:  scholar-api-dev
+        image: registry.polygram-solutions.com/scholar-api-dev:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+      imagePullSecrets:
+      - name: my-secret
+---
+# This section will create a service in the Kubernetes cluster
+# so that the deployment can be accessed from the outside
+apiVersion: v1
+kind: Service
+metadata:
+  name: scholar-api-dev
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: scholar-api-dev

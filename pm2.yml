@@ -1,0 +1,6 @@
+apps:
+    - script: ./dist/server.js
+      name: ks-api
+      instances: max
+      exec_mode: cluster
+      watch : false
