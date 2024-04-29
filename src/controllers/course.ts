@@ -651,13 +651,17 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
     return [CommonUtil.sortStudentName(json), count];
   }
   async getDataFromDateRange(req: any) {
-    const { start_date, end_date } = req.query;
     const [skip, limit] = this.skipLimit(req);
+    const { start_date, end_date } = req.query;
+    console.log(req.query);
+
     const [startDate, endDate] = CommonUtil.parseStartDateEndDate(
       start_date,
       end_date
     );
 
+    startDate.setDate(startDate.getDate());
+    endDate.setDate(endDate.getDate() + 1);
     const data = await this.model.aggregate([
       {
         $match: {
@@ -667,6 +671,7 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
           ],
         },
       },
+
       { $sort: { sort_condition: 1, _id: -1 } },
       {
         $facet: {

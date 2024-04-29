@@ -377,7 +377,7 @@ export default class SubjectController {
         }
 
         let [startDate, endDate] = CommonUtil.parseStartDateEndDate(req.query.start_date, req.query.end_date);
-
+        
         let data = await models.school.aggregate([
             {
                 $match: querySchool
@@ -640,6 +640,7 @@ export default class SubjectController {
                 }
             },
         ]).allowDiskUse(true);;
+        
         // return data;
         let groupDeparts: any = [];
         for (var i = 0; i < data.length; i++){
@@ -716,6 +717,7 @@ export default class SubjectController {
             )
             jsonData[i].student_data = cityData;
         }
+        
         return {
             start_date: startDate,
             start_end: endDate,
