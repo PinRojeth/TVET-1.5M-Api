@@ -662,6 +662,7 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
 
     startDate.setDate(startDate.getDate());
     endDate.setDate(endDate.getDate() + 1);
+
     const data = await this.model.aggregate([
       {
         $match: {
