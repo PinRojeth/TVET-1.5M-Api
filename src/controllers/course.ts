@@ -653,7 +653,6 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
   async getDataFromDateRange(req: any) {
     const [skip, limit] = this.skipLimit(req);
     const { start_date, end_date } = req.query;
-    console.log(req.query);
 
     const [startDate, endDate] = CommonUtil.parseStartDateEndDate(
       start_date,
@@ -687,6 +686,34 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
                   {
                     $match: {
                       $expr: { $eq: ["$courses", "$$courseId"] },
+                      $or: [
+                        { scholarship_status: EnumConstant.ACTIVE },
+                        { scholarship_status: EnumConstant.REQUESTING },
+                      ],
+                    },
+                  },
+                  {
+                    $count: "total_count",
+                  },
+                ],
+                as: "students",
+              },
+            },
+            {
+              $addFields: {
+                total_submit_student_count: {
+                  $ifNull: [{ $arrayElemAt: ["$students.total_count", 0] }, 0],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "students",
+                let: { courseId: "$_id" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$courses", "$$courseId"] },
                       scholarship_status: EnumConstant.ACTIVE,
                     },
                   },
@@ -699,7 +726,7 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
             },
             {
               $addFields: {
-                student_count: {
+                student_active_count: {
                   $ifNull: [{ $arrayElemAt: ["$students.count", 0] }, 0],
                 },
               },
