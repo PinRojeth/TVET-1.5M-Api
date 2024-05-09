@@ -6,6 +6,7 @@ import EnumConstant, { Role } from "../utils/enumConstant";
 import controllers from ".";
 import { pAdmin } from "../utils/permissionAdmin";
 import { start } from "repl";
+import apply_major from "../routes/admin/apply_major";
 export default class ApplyMajorController extends AbstractController<ICourses> {
   model: Model<ICourses>;
   constructor(model: Model<ICourses>) {
@@ -686,10 +687,6 @@ export default class ApplyMajorController extends AbstractController<ICourses> {
                   {
                     $match: {
                       $expr: { $eq: ["$courses", "$$courseId"] },
-                      $or: [
-                        { scholarship_status: EnumConstant.ACTIVE },
-                        { scholarship_status: EnumConstant.REQUESTING },
-                      ],
                     },
                   },
                   {
